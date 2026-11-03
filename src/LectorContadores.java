@@ -12,31 +12,33 @@ import java.util.TreeSet;
 public class LectorContadores {
     public static void main(String[] args) {
 
+        // Declaramos los archivos que vamos a utilizar durante el programa.
         File fichero = new File("src/lecturas_20261019.txt");
         File lecturas = new  File("src/lecturas.dat");
         File incidencias = new  File("src/incidencias.log");
         File resumen = new  File("src/resumen.txt");
 
-        String[] partes;
+        // Creamos las colecciones necesarias para guardar los datos y organizar las lecturas de cada contador.
         ArrayList<String> numeros = new ArrayList<>();
         HashMap<Integer, ArrayList<Double>> contadores = new HashMap<>();
-        HashMap<Integer, ArrayList<String>> ultimoAbonado = new HashMap<>();
         HashMap<Integer, ArrayList<String>> nombresConEspacios = new HashMap<>();
 
-
+        // Declaramos las variables que utilizaremos para almacenar los datos de cada línea y controlar el número de línea leído.
+        String[] partes;
         int contLinea = 1;
         int contador;
         String abonado, estado = "";
         long fecha;
         double lectura;
 
-        // Leemos el archivo en su codificación correspondiente
+        // Abrimos los archivos indicando la codificación correspondiente.
+        // El fichero de entrada se lee en ISO-8859-1, mientras que los archivos de texto de salida se escriben en UTF-8.
         try (BufferedReader br = new BufferedReader(new FileReader(fichero, StandardCharsets.ISO_8859_1));
              RandomAccessFile raf = new RandomAccessFile(lecturas, "rw");
              BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(incidencias, true), StandardCharsets.UTF_8));
              BufferedWriter bw2 = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(resumen), StandardCharsets.UTF_8))) {
 
-            // Contamos los registros que ya existen en el histórico
+            // Recorremos el fichero binario(historico) para contar cuántos registros existen actualmente en el histórico.
             int totalRegistros = 0;
 
             while (raf.getFilePointer() < raf.length()) {
@@ -50,9 +52,10 @@ public class LectorContadores {
 
             System.out.println("Registros anteriores: " + totalRegistros);
 
-            // Nos posicionamos al final del archivo .dat para escribir
+            //  Nos situamos al final del fichero binario(historico) para que las nuevas lecturas se añadan sin sobrescribir los registros anteriores.
             raf.seek(raf.length());
 
+            // Leemos el fichero de entrada línea a línea para no tener que cargar todo su contenido en memoria.
             String linea;
             while ((linea = br.readLine()) != null) {
                 boolean escribir = false;
@@ -80,7 +83,7 @@ public class LectorContadores {
                     escribir = true;
                 }
 
-                //Escribimos en "lecturas.dat"
+                // Si la línea ha superado todas las comprobaciones, guardamos sus datos en el fichero binario(historico).
                 if (escribir) {
 
                     // Guardamos los nombres de los abonados de cada contador para así después coger el nombre del último abonado
@@ -119,18 +122,21 @@ public class LectorContadores {
 
             }
 
-            // Ordenamos los contadores de menor a mayor
+            // Utilizamos un TreeSet para ordenar los números de contador de menor a mayor antes de generar el resumen.
             TreeSet<Integer> contadoresOrdenados = new TreeSet<>(contadores.keySet());
 
 
+            // Recorremos los contadores ordenados y obtenemos el número de lecturas y el último abonado de cada uno.
             for (int a : contadoresOrdenados) {
                 int var = contadores.get(a).size();
                 String ultimoNombre = nombresConEspacios.get(a).getLast();
 
+                // Si el contador tiene más de una lectura, calculamos el consumo restando la penúltima lectura a la última.
                 if (var > 1) {
                     double consumo = contadores.get(a).get(var - 1) - contadores.get(a).get(var - 2);
                     String consumoTexto = String.format(java.util.Locale.US, "%.3f", consumo).replace(".", ",");
 
+                    // Según el consumo obtenido, asignamos un estado al contador
                     if (consumo > 0) {
                         estado = "OK";
                     } else if (consumo == 0) {
@@ -141,6 +147,7 @@ public class LectorContadores {
 
                     bw2.write(String.format("%05d", a) + ";" + ultimoNombre + ";" + var + ";" + consumoTexto + ";" + estado + "\n");
 
+                // Si solamente existe una lectura del contador, no podemos calcular el consumo, por lo que indicamos SIN_HISTORICO.
                 } else if (var == 1) {
                     estado = "SIN_HISTORICO";
                     bw2.write(String.format("%05d", a) + ";" + ultimoNombre + ";" + var + ";-;" + estado + "\n");
@@ -152,6 +159,7 @@ public class LectorContadores {
         }
     }
 
+    // Método que comprueba si una fecha tiene el formato AAAA-MM-DD y si es una fecha válida del calendario.
     private static boolean comprobarFecha(String parte) {
 
         DateTimeFormatter formato = DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
