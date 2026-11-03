@@ -12,11 +12,33 @@ import java.util.TreeSet;
 public class LectorContadores {
     public static void main(String[] args) {
 
-        // Declaramos los archivos que vamos a utilizar durante el programa.
-        File fichero = new File("src/lecturas_20261019.txt");
-        File lecturas = new  File("src/lecturas.dat");
-        File incidencias = new  File("src/incidencias.log");
-        File resumen = new  File("src/resumen.txt");
+        // Comprobamos que se haya indicado un fichero de entrada.
+        if (args.length != 1) {
+            System.out.println("Error: debes indicar el fichero de entrada.");
+            System.exit(2);
+        }
+
+        File fichero = new File(args[0]);
+
+        // Comprobamos que el fichero exista.
+        if (!fichero.exists() || !fichero.isFile()) {
+            System.out.println("Error: el fichero no existe.");
+            System.exit(2);
+        }
+
+        // Comprobamos que el fichero no esté vacío.
+        if (fichero.length() == 0) {
+            System.out.println("Error: el fichero está vacío.");
+            System.exit(2);
+        }
+
+        // Obtenemos la carpeta donde se encuentra el fichero de entrada.
+        File carpeta = fichero.getAbsoluteFile().getParentFile();
+
+        // Creamos los archivos de salida en la misma carpeta.
+        File lecturas = new File(carpeta, "lecturas.dat");
+        File incidencias = new File(carpeta, "incidencias.log");
+        File resumen = new File(carpeta, "resumen.txt");
 
         // Creamos las colecciones necesarias para guardar los datos y organizar las lecturas de cada contador.
         ArrayList<String> numeros = new ArrayList<>();
